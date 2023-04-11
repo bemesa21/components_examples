@@ -16,27 +16,27 @@ defmodule ComponentsExamplesWeb.ShoppingListLive do
   def render(assigns) do
     ~H"""
     <div id="lists" class="grid sm:grid-cols-1 md:grid-cols-3 gap-2">
-        <.live_component
-          id="1"
-          module={ComponentsExamplesWeb.ListComponent}
-          list={@shopping_list}
-          list_name="Shopping list 1"
-          group="grocery_list"
-        />
-        <.live_component
-          id="2"
-          module={ComponentsExamplesWeb.ListComponent}
-          list={@shopping_list}
-          list_name="Shopping list 2"
-          group="grocery_list"
-        />
-        <.live_component
-          id="3"
-          module={ComponentsExamplesWeb.ListComponent}
-          list={@shopping_list}
-          list_name="Shopping list 3"
-          group="grocery_list"
-        />
+      <.live_component
+        id="1"
+        module={ComponentsExamplesWeb.ListComponent}
+        list={@shopping_list}
+        list_name="Shopping list 1"
+        group="grocery_list"
+      />
+      <.live_component
+        id="2"
+        module={ComponentsExamplesWeb.ListComponent}
+        list={@shopping_list}
+        list_name="Shopping list 2"
+        group="grocery_list"
+      />
+      <.live_component
+        id="3"
+        module={ComponentsExamplesWeb.ListComponent}
+        list={@shopping_list}
+        list_name="Shopping list 3"
+        group="grocery_list"
+      />
     </div>
     """
   end

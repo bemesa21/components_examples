@@ -173,7 +173,10 @@ defmodule ComponentsExamplesWeb.CoreComponents do
   """
   attr :for, :any, required: true, doc: "the datastructure for the form"
   attr :as, :any, default: nil, doc: "the server side parameter to collect all input under"
-  attr :inputs_container_class, :string, default: "mt-10 space-y-8 bg-white", doc: "the customized classes for the inputs container"
+
+  attr :inputs_container_class, :string,
+    default: "mt-10 space-y-8 bg-white",
+    doc: "the customized classes for the inputs container"
 
   attr :rest, :global,
     include: ~w(autocomplete name rel action enctype method novalidate target),

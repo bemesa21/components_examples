@@ -2,7 +2,9 @@ defmodule ComponentsExamplesWeb.ErrorJSONTest do
   use ComponentsExamplesWeb.ConnCase, async: true
 
   test "renders 404" do
-    assert ComponentsExamplesWeb.ErrorJSON.render("404.json", %{}) == %{errors: %{detail: "Not Found"}}
+    assert ComponentsExamplesWeb.ErrorJSON.render("404.json", %{}) == %{
+             errors: %{detail: "Not Found"}
+           }
   end
 
   test "renders 500" do
