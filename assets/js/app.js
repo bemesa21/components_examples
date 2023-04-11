@@ -36,7 +36,7 @@ Hooks.Sortable = {
       ghostClass: "drag-ghost",
       forceFallback: true,
       onEnd: e => {
-        let params = {old: e.oldIndex, new: e.newIndex, ...e.item.dataset}
+        let params = {old: e.oldIndex, new: e.newIndex, to: e.to.dataset, ...e.item.dataset}
         this.pushEventTo(this.el, "reposition", params)
       }
     })

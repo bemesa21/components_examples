@@ -1,9 +1,12 @@
 defmodule ComponentsExamplesWeb.ListComponent do
   use ComponentsExamplesWeb, :live_component
 
+  @item %{"name" => "", "id" => nil, "position" => nil}
+
   def render(assigns) do
     ~H"""
-    <div class="mx-auto max-w-7xl px-4 space-y-4">
+    <div class="bg-gray-100 py-4 rounded-lg">
+    <div class="space-y-5 mx-auto max-w-7xl px-4 space-y-4">
       <.header>
         <%= @list_name %>
         <.simple_form
@@ -22,7 +25,8 @@ defmodule ComponentsExamplesWeb.ListComponent do
           </:actions>
         </.simple_form>
       </.header>
-      <div id={"#{@id}-items"} class="grid grid-cols-1 gap-2" phx-hook="Sortable" data-list_id={@id}>
+      <div>
+      <div id={"#{@id}-items"} class="grid grid-cols-1 gap-2" phx-hook="Sortable" data-list_id={@id} data-group={@group}>
         <div
           :for={item <- @list}
           id={"#{@id}-#{item.id}"}
@@ -55,12 +59,23 @@ defmodule ComponentsExamplesWeb.ListComponent do
           </div>
         </div>
       </div>
+      </div>
       <.button class="w-full mt-4">reset</.button>
+    </div>
     </div>
     """
   end
 
-  def handle_event("reposition", %{"id" => id, "new" => new_idx, "old" => _} = params, socket) do
+  def update(assigns, socket) do
+    socket =
+      socket
+      |> assign(assigns)
+      |> assign(:form, to_form(@item))
+
+    {:ok, socket}
+  end
+
+  def handle_event("reposition", %{"id" => _id, "new" => _new_idx, "old" => _} = params, socket) do
     {:noreply, socket}
   end
 

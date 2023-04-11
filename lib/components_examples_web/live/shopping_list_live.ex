@@ -1,8 +1,6 @@
 defmodule ComponentsExamplesWeb.ShoppingListLive do
   use ComponentsExamplesWeb, :live_view
 
-  @item %{"name" => "", "id" => nil, "position" => nil}
-
   def mount(_params, _session, socket) do
     list = [
       %{name: "Bread", id: 1, position: 1, status: :in_progress},
@@ -12,21 +10,33 @@ defmodule ComponentsExamplesWeb.ShoppingListLive do
       %{name: "Eggs", id: 5, position: 5, status: :in_progress}
     ]
 
-    {:ok, assign(socket, shopping_list: list, form: to_form(@item))}
+    {:ok, assign(socket, shopping_list: list)}
   end
 
   def render(assigns) do
     ~H"""
     <div id="lists" class="grid sm:grid-cols-1 md:grid-cols-3 gap-2">
-      <div class="bg-gray-100 py-4 rounded-lg">
         <.live_component
-          id="shopping_list"
+          id="1"
           module={ComponentsExamplesWeb.ListComponent}
           list={@shopping_list}
-          form={@form}
-          list_name="Shopping list"
+          list_name="Shopping list 1"
+          group="grocery_list"
         />
-      </div>
+        <.live_component
+          id="2"
+          module={ComponentsExamplesWeb.ListComponent}
+          list={@shopping_list}
+          list_name="Shopping list 2"
+          group="grocery_list"
+        />
+        <.live_component
+          id="3"
+          module={ComponentsExamplesWeb.ListComponent}
+          list={@shopping_list}
+          list_name="Shopping list 3"
+          group="grocery_list"
+        />
     </div>
     """
   end
