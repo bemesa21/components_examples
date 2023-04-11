@@ -22,10 +22,11 @@ defmodule ComponentsExamplesWeb.ListComponent do
           </:actions>
         </.simple_form>
       </.header>
-      <div id={"#{@id}-items"} class="grid grid-cols-1 gap-2">
+      <div id={"#{@id}-items"} class="grid grid-cols-1 gap-2" phx-hook="Sortable" data-list_id={@id}>
         <div
           :for={item <- @list}
           id={"#{@id}-#{item.id}"}
+          data-id={item.id}
           class="
           relative flex items-center space-x-3 rounded-lg border border-gray-300 bg-white px-2 shadow-sm
           focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 hover:border-gray-400
@@ -34,7 +35,7 @@ defmodule ComponentsExamplesWeb.ListComponent do
           "
         >
           <div class="flex-1">
-            <div class="flex">
+            <div class="flex drag-ghost:opacity-0">
               <button type="button" class="w-10">
                 <.icon
                   name="hero-check-circle"
@@ -57,6 +58,10 @@ defmodule ComponentsExamplesWeb.ListComponent do
       <.button class="w-full mt-4">reset</.button>
     </div>
     """
+  end
+
+  def handle_event("reposition", %{"id" => id, "new" => new_idx, "old" => _} = params, socket) do
+    {:noreply, socket}
   end
 
   def handle_event("new", %{"at" => _at}, socket) do
