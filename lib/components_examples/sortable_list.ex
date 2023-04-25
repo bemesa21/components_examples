@@ -6,6 +6,7 @@ defmodule ComponentsExamples.SortableList do
   import Ecto.Query, warn: false
   alias ComponentsExamples.Repo
 
+  alias ComponentsExamples.SortableList.Item
   alias ComponentsExamples.SortableList.List
 
   @doc """
@@ -18,7 +19,14 @@ defmodule ComponentsExamples.SortableList do
 
   """
   def list_lists do
-    Repo.all(List)
+    List
+    |> Repo.all()
+    |> Repo.preload(
+      items:
+        from(i in Item,
+          order_by: [asc: i.position]
+        )
+    )
   end
 
   @doc """
@@ -101,8 +109,6 @@ defmodule ComponentsExamples.SortableList do
   def change_list(%List{} = list, attrs \\ %{}) do
     List.changeset(list, attrs)
   end
-
-  alias ComponentsExamples.SortableList.Item
 
   @doc """
   Returns the list of items.
