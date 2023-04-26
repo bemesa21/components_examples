@@ -152,9 +152,24 @@ defmodule ComponentsExamples.SortableList do
 
   """
   def create_item(attrs \\ %{}) do
-    %Item{}
-    |> Item.changeset(attrs)
-    |> Repo.insert()
+    Ecto.Multi.new()
+    |> Ecto.Multi.run(:position, fn repo, _changes ->
+      position =
+        repo.one(from i in Item, where: i.list_id == ^attrs["list_id"], select: count(i.id))
+
+      {:ok, position}
+    end)
+    |> Ecto.Multi.insert(:item, fn %{position: position} ->
+      Item.changeset(%Item{position: position}, attrs)
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{item: item}} ->
+        {:ok, item}
+
+      {:error, :item, changeset, _changes_so_far} ->
+        {:error, changeset}
+    end
   end
 
   @doc """
@@ -188,7 +203,17 @@ defmodule ComponentsExamples.SortableList do
 
   """
   def delete_item(%Item{} = item) do
-    Repo.delete(item)
+    Ecto.Multi.new()
+    |> multi_decrement_positions(:dec_rest_in_list, item, list_id: item.list_id)
+    |> Ecto.Multi.delete(:item, item)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{item: item}} ->
+        {:ok, item}
+
+      {:error, _failed_op, failed_val, _changes_so_far} ->
+        {:error, failed_val}
+    end
   end
 
   @doc """
@@ -202,5 +227,28 @@ defmodule ComponentsExamples.SortableList do
   """
   def change_item(%Item{} = item, attrs \\ %{}) do
     Item.changeset(item, attrs)
+  end
+
+  defp multi_decrement_positions(
+         %Ecto.Multi{} = multi,
+         name,
+         %type{} = struct,
+         where_query,
+         opts \\ []
+       ) do
+    Ecto.Multi.update_all(
+      multi,
+      name,
+      fn _ ->
+        from(t in type,
+          where: ^where_query,
+          where:
+            t.position >
+              subquery(from og in type, where: og.id == ^struct.id, select: og.position),
+          update: [inc: [position: -1]]
+        )
+      end,
+      opts
+    )
   end
 end

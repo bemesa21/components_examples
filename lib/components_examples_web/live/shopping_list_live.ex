@@ -20,4 +20,12 @@ defmodule ComponentsExamplesWeb.ShoppingListLive do
     </div>
     """
   end
+
+  def handle_info({:item_added, _item, _list_id}, socket) do
+    {:noreply, assign(socket, lists: SortableList.list_lists())}
+  end
+
+  def handle_info({:item_deleted, _item, _list_id}, socket) do
+    {:noreply, assign(socket, lists: SortableList.list_lists())}
+  end
 end

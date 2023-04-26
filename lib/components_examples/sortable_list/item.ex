@@ -14,7 +14,8 @@ defmodule ComponentsExamples.SortableList.Item do
   @doc false
   def changeset(item, attrs) do
     item
-    |> cast(attrs, [:id, :name, :status])
-    |> validate_required([:name, :status])
+    |> cast(attrs, [:id, :name, :status, :list_id])
+    |> validate_required([:name, :status, :list_id])
+    |> foreign_key_constraint(:list_id)
   end
 end

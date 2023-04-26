@@ -1,7 +1,8 @@
 defmodule ComponentsExamplesWeb.ListComponent do
   use ComponentsExamplesWeb, :live_component
 
-  @item %{"name" => "", "id" => nil, "position" => nil}
+  alias ComponentsExamples.SortableList
+  alias ComponentsExamples.SortableList.Item
 
   def render(assigns) do
     ~H"""
@@ -17,6 +18,8 @@ defmodule ComponentsExamplesWeb.ListComponent do
             class="min-w-0 flex-auto drag-ghost:opacity-0"
             inputs_container_class="flex"
           >
+            <input type="hidden" name={@form[:list_id].name} value={@form[:list_id].value} />
+
             <.input field={@form[:name]} type="text" />
             <:actions>
               <.button class="align-middle ml-2">
@@ -35,7 +38,7 @@ defmodule ComponentsExamplesWeb.ListComponent do
           >
             <div
               :for={item <- @list}
-              id={"#{@id}-#{item.id}"}
+              id={"list#{@id}-item#{item.id}"}
               data-id={item.id}
               class="
           relative flex items-center space-x-3 rounded-lg border border-gray-300 bg-white px-2 shadow-sm
@@ -58,7 +61,14 @@ defmodule ComponentsExamplesWeb.ListComponent do
                   <div class="flex-auto block text-sm leading-6 text-zinc-900">
                     <%= item.name %>
                   </div>
-                  <button type="button" class="w-10 -mt-1 flex-none">
+                  <button
+                    type="button"
+                    class="w-10 -mt-1 flex-none"
+                    phx-click={
+                      JS.push("delete", target: @myself, value: %{id: item.id})
+                      |> hide("#list#{@id}-item#{item.id}")
+                    }
+                  >
                     <.icon name="hero-x-mark" />
                   </button>
                 </div>
@@ -76,12 +86,12 @@ defmodule ComponentsExamplesWeb.ListComponent do
     socket =
       socket
       |> assign(assigns)
-      |> assign(:form, to_form(@item))
+      |> assign(:form, build_item_form(assigns.id))
 
     {:ok, socket}
   end
 
-  def handle_event("reposition", %{"id" => _id, "new" => _new_idx, "old" => _} = params, socket) do
+  def handle_event("reposition", %{"id" => _id, "new" => _new_idx, "old" => _} = _params, socket) do
     {:noreply, socket}
   end
 
@@ -89,11 +99,33 @@ defmodule ComponentsExamplesWeb.ListComponent do
     {:noreply, socket}
   end
 
-  def handle_event("save", _params, socket) do
-    {:noreply, socket}
+  def handle_event("save", %{"item" => item_params}, socket) do
+    case SortableList.create_item(item_params) do
+      {:ok, new_item} ->
+        send(self(), {:item_added, new_item, socket.assigns.id})
+
+        {:noreply,
+         socket
+         |> assign(:form, build_item_form(socket.assigns.id))}
+
+      {:error, changeset} ->
+        {:noreply, assign(socket, :form, to_form(changeset))}
+    end
   end
 
   def handle_event("validate", _params, socket) do
     {:noreply, socket}
+  end
+
+  def handle_event("delete", %{"id" => item_id}, socket) do
+    item = SortableList.get_item!(item_id)
+    {:ok, _} = SortableList.delete_item(item)
+    {:noreply, socket}
+  end
+
+  defp build_item_form(list_id) do
+    %Item{list_id: list_id}
+    |> SortableList.change_item(%{})
+    |> to_form()
   end
 end
