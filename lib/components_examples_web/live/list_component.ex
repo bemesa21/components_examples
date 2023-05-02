@@ -10,23 +10,6 @@ defmodule ComponentsExamplesWeb.ListComponent do
       <div class="space-y-5 mx-auto max-w-7xl px-4 space-y-4">
         <.header>
           <%= @list_name %>
-          <.simple_form
-            for={@form}
-            phx-change="validate"
-            phx-submit="save"
-            phx-target={@myself}
-            class="min-w-0 flex-auto drag-ghost:opacity-0"
-            inputs_container_class="flex"
-          >
-            <input type="hidden" name={@form[:list_id].name} value={@form[:list_id].value} />
-
-            <.input field={@form[:name]} type="text" />
-            <:actions>
-              <.button class="align-middle ml-2">
-                <.icon name="hero-plus" />
-              </.button>
-            </:actions>
-          </.simple_form>
         </.header>
         <div>
           <div
@@ -37,9 +20,9 @@ defmodule ComponentsExamplesWeb.ListComponent do
             data-group={@group}
           >
             <div
-              :for={item <- @list}
-              id={"list#{@id}-item#{item.id}"}
-              data-id={item.id}
+              :for={form <- @list}
+              id={"list#{@id}-item#{form.data.id}"}
+              data-id={form.data.id}
               class="
           relative flex items-center space-x-3 rounded-lg border border-gray-300 bg-white px-2 shadow-sm
           focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 hover:border-gray-400
@@ -47,32 +30,40 @@ defmodule ComponentsExamplesWeb.ListComponent do
           drag-ghost:bg-zinc-300 drag-ghost:border-0 drag-ghost:ring-0
           "
             >
-              <div class="flex-1">
-                <div class="flex drag-ghost:opacity-0">
+              <.simple_form
+                for={form}
+                phx-change="validate"
+                phx-submit="save"
+                phx-value-id={form.data.id}
+                phx-target={@myself}
+                class="min-w-0 flex-1 drag-ghost:opacity-0"
+              >
+                <div class="flex">
                   <button type="button" class="w-10">
                     <.icon
                       name="hero-check-circle"
                       class={[
                         "w-7 h-7",
-                        if(item.status == :completed, do: "bg-green-600", else: "bg-gray-300")
+                        if(form[:status].value == :completed, do: "bg-green-600", else: "bg-gray-300")
                       ]}
                     />
                   </button>
                   <div class="flex-auto block text-sm leading-6 text-zinc-900">
-                    <%= item.name %>
+                    <input type="hidden" name={form[:list_id].name} value={form[:list_id].value} />
+                    <.input field={form[:name]} type="text" border={false} />
                   </div>
                   <button
                     type="button"
                     class="w-10 -mt-1 flex-none"
                     phx-click={
-                      JS.push("delete", target: @myself, value: %{id: item.id})
-                      |> hide("#list#{@id}-item#{item.id}")
+                      JS.push("delete", target: @myself, value: %{id: form.data.id})
+                      |> hide("#list#{@id}-item#{form.data.id}")
                     }
                   >
                     <.icon name="hero-x-mark" />
                   </button>
                 </div>
-              </div>
+              </.simple_form>
             </div>
           </div>
         </div>
@@ -82,11 +73,13 @@ defmodule ComponentsExamplesWeb.ListComponent do
     """
   end
 
-  def update(assigns, socket) do
+  def update(%{list: list} = assigns, socket) do
+    item_forms = Enum.map(list, &to_change_form(&1, %{list_id: assigns.id}))
+
     socket =
       socket
       |> assign(assigns)
-      |> assign(:form, build_item_form(assigns.id))
+      |> assign(:list, item_forms)
 
     {:ok, socket}
   end
@@ -127,5 +120,14 @@ defmodule ComponentsExamplesWeb.ListComponent do
     %Item{list_id: list_id}
     |> SortableList.change_item(%{})
     |> to_form()
+  end
+
+  defp to_change_form(todo_or_changeset, params, action \\ nil) do
+    changeset =
+      todo_or_changeset
+      |> SortableList.change_item(params)
+      |> Map.put(:action, action)
+
+    to_form(changeset, as: "item", id: "form-#{changeset.data.list_id}-#{changeset.data.id}")
   end
 end
