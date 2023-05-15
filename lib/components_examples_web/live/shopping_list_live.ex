@@ -11,8 +11,8 @@ defmodule ComponentsExamplesWeb.ShoppingListLive do
     <div id="lists" class="grid sm:grid-cols-1 md:grid-cols-3 gap-2">
       <.live_component
         :for={list <- @lists}
-        id={list.id}
         module={ComponentsExamplesWeb.ListComponent}
+        id={list.id}
         list={list.items}
         list_name={list.title}
         group="grocery_list"

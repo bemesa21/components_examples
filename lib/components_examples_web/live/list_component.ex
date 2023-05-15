@@ -37,6 +37,7 @@ defmodule ComponentsExamplesWeb.ListComponent do
                 phx-submit="save"
                 phx-target={@myself}
                 class="min-w-0 flex-1 drag-ghost:opacity-0"
+                phx-value-id={form.data.id}
               >
                 <div class="flex">
                   <button type="button" class="w-10">
@@ -50,7 +51,6 @@ defmodule ComponentsExamplesWeb.ListComponent do
                   </button>
                   <div class="flex-auto block text-sm leading-6 text-zinc-900">
                     <input type="hidden" name={form[:list_id].name} value={form[:list_id].value} />
-                    <input type="hidden" name={form[:id].name} value={form[:id].value} />
                     <.input
                       field={form[:name]}
                       type="text"
@@ -111,7 +111,19 @@ defmodule ComponentsExamplesWeb.ListComponent do
     {:noreply, stream_insert(socket, :items, build_item_form(list_id), at: -1)}
   end
 
-  def handle_event("save", %{"item" => %{"id" => ""} = item_params}, socket) do
+  def handle_event("save", %{"id" => id, "item" => params}, socket) do
+    todo = SortableList.get_item!(id)
+
+    case SortableList.update_item(todo, params) do
+      {:ok, updated_item} ->
+        {:noreply, stream_insert(socket, :items, build_item_form(updated_item, %{}))}
+
+      {:error, changeset} ->
+        {:noreply, stream_insert(socket, :items, build_item_form(changeset, %{}, :insert))}
+    end
+  end
+
+  def handle_event("save", %{"item" => item_params}, socket) do
     case SortableList.create_item(item_params) do
       {:ok, new_item} ->
         empty_form = build_item_form(item_params["list_id"])
@@ -127,22 +139,10 @@ defmodule ComponentsExamplesWeb.ListComponent do
     end
   end
 
-  def handle_event("save", %{"item" => %{"id" => id} = params}, socket) do
-    todo = SortableList.get_item!(id)
-
-    case SortableList.update_item(todo, params) do
-      {:ok, updated_item} ->
-        {:noreply, stream_insert(socket, :items, build_item_form(updated_item, %{}))}
-
-      {:error, changeset} ->
-        {:noreply, stream_insert(socket, :items, build_item_form(changeset, %{}, :insert))}
-    end
-  end
-
-  def handle_event("validate", %{"item" => params}, socket) do
+  def handle_event("validate", %{"item" => item_params} = params, socket) do
     # asegurarse de tener los datos en data
-    item = %Item{id: params["id"] || nil, list_id: params["list_id"]}
-    {:noreply, stream_insert(socket, :items, build_item_form(item, params, :validate))}
+    item = %Item{id: params["id"] || nil, list_id: item_params["list_id"]}
+    {:noreply, stream_insert(socket, :items, build_item_form(item, item_params, :validate))}
   end
 
   def handle_event("delete", %{"id" => item_id}, socket) do
@@ -172,7 +172,8 @@ defmodule ComponentsExamplesWeb.ListComponent do
     changeset =
       item_or_changeset
       |> SortableList.change_item(params)
-      |> Map.put(:action, action) #show errors or not
+      # show errors or not
+      |> Map.put(:action, action)
 
     to_form(changeset, as: "item", id: "form-#{changeset.data.list_id}-#{changeset.data.id}")
   end
