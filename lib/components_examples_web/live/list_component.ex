@@ -13,10 +13,10 @@ defmodule ComponentsExamplesWeb.ListComponent do
         </.header>
         <div>
           <div
-            id={"#{@id}-items"}
+            id={"#{@list_id}-items"}
             class="grid grid-cols-1 gap-2"
             phx-hook="Sortable"
-            data-list_id={@id}
+            data-list_id={@list_id}
             data-group={@group}
             phx-update="stream"
           >
@@ -58,7 +58,8 @@ defmodule ComponentsExamplesWeb.ListComponent do
                       strike_through={form[:status].value == :completed}
                       phx-target={@myself}
                       phx-keydown={
-                        !form.data.id && JS.push("discard", target: @myself, value: %{list_id: @id})
+                        !form.data.id &&
+                          JS.push("discard", target: @myself, value: %{list_id: @list_id})
                       }
                       phx-key="escape"
                       phx-blur={form.data.id && JS.dispatch("submit", to: "##{form.id}")}
@@ -69,7 +70,7 @@ defmodule ComponentsExamplesWeb.ListComponent do
                     class="w-10 -mt-1 flex-none"
                     phx-click={
                       JS.push("delete", target: @myself, value: %{id: form.data.id})
-                      |> hide("#list#{@id}-item#{form.data.id}")
+                      |> hide("#list#{@list_id}-item#{form.data.id}")
                     }
                   >
                     <.icon name="hero-x-mark" />
@@ -79,10 +80,13 @@ defmodule ComponentsExamplesWeb.ListComponent do
             </div>
           </div>
         </div>
-        <.button phx-click={JS.push("new", target: @myself, value: %{list_id: @id})} class="mt-4">
+        <.button phx-click={JS.push("new", target: @myself, value: %{list_id: @list_id})} class="mt-4">
           Add item
         </.button>
-        <.button phx-click={JS.push("reset", target: @myself, value: %{list_id: @id})} class="mt-4">
+        <.button
+          phx-click={JS.push("reset", target: @myself, value: %{list_id: @list_id})}
+          class="mt-4"
+        >
           Reset
         </.button>
       </div>
@@ -91,11 +95,15 @@ defmodule ComponentsExamplesWeb.ListComponent do
   end
 
   def update(%{list: list} = assigns, socket) do
-    item_forms = Enum.map(list, &build_item_form(&1, %{list_id: assigns.id}))
+    item_forms = Enum.map(list.items, &build_item_form(&1, %{list_id: assigns.id}))
 
     socket =
       socket
-      |> assign(assigns)
+      |> assign(
+        list_id: list.id,
+        list_name: list.title,
+        group: assigns.group
+      )
       # |> stream(:items, item_forms, reset: true)
       # pa que es el reset true????
       |> stream(:items, item_forms)

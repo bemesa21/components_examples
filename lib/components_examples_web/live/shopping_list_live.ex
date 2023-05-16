@@ -13,8 +13,7 @@ defmodule ComponentsExamplesWeb.ShoppingListLive do
         :for={list <- @lists}
         module={ComponentsExamplesWeb.ListComponent}
         id={list.id}
-        list={list.items}
-        list_name={list.title}
+        list={list}
         group="grocery_list"
       />
     </div>
