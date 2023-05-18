@@ -11,73 +11,77 @@ defmodule ComponentsExamplesWeb.ListComponent do
         <.header>
           <%= @list_name %>
         </.header>
-        <div>
+        <div
+          id={"#{@list_id}-items"}
+          class="grid grid-cols-1 gap-2"
+          phx-hook="Sortable"
+          data-list_id={@list_id}
+          data-group={@group}
+          phx-update="stream"
+        >
           <div
-            id={"#{@list_id}-items"}
-            class="grid grid-cols-1 gap-2"
-            phx-hook="Sortable"
-            data-list_id={@list_id}
-            data-group={@group}
-            phx-update="stream"
-          >
-            <div
-              :for={{id, form} <- @streams.items}
-              id={id}
-              data-id={form.data.id}
-              class="
+            :for={{id, form} <- @streams.items}
+            id={id}
+            data-id={form.data.id}
+            class="
           relative flex items-center space-x-3 rounded-lg border border-gray-300 bg-white px-2 shadow-sm
           focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 hover:border-gray-400
           drag-item:focus-within:ring-0 drag-item:focus-within:ring-offset-0
           drag-ghost:bg-zinc-300 drag-ghost:border-0 drag-ghost:ring-0
           "
+          >
+            <.simple_form
+              for={form}
+              phx-change="validate"
+              phx-submit="save"
+              phx-target={@myself}
+              class="min-w-0 flex-1 drag-ghost:opacity-0"
+              phx-value-id={form.data.id}
             >
-              <.simple_form
-                for={form}
-                phx-change="validate"
-                phx-submit="save"
-                phx-target={@myself}
-                class="min-w-0 flex-1 drag-ghost:opacity-0"
-                phx-value-id={form.data.id}
-              >
-                <div class="flex">
-                  <button type="button" class="w-10">
-                    <.icon
-                      name="hero-check-circle"
-                      class={[
-                        "w-7 h-7",
-                        if(form[:status].value == :completed, do: "bg-green-600", else: "bg-gray-300")
-                      ]}
-                    />
-                  </button>
-                  <div class="flex-auto block text-sm leading-6 text-zinc-900">
-                    <input type="hidden" name={form[:list_id].name} value={form[:list_id].value} />
-                    <.input
-                      field={form[:name]}
-                      type="text"
-                      border={false}
-                      strike_through={form[:status].value == :completed}
-                      phx-target={@myself}
-                      phx-keydown={
-                        !form.data.id &&
-                          JS.push("discard", target: @myself, value: %{list_id: @list_id})
-                      }
-                      phx-key="escape"
-                      phx-blur={form.data.id && JS.dispatch("submit", to: "##{form.id}")}
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    class="w-10 -mt-1 flex-none"
-                    phx-click={
-                      JS.push("delete", target: @myself, value: %{id: form.data.id})
-                      |> hide("#list#{@list_id}-item#{form.data.id}")
+              <div class="flex">
+                <button
+                  :if={form.data.id}
+                  type="button"
+                  class="w-10"
+                  phx-click={JS.push("toggle_complete", target: @myself, value: %{id: form.data.id})}
+                >
+                  <.icon
+                    name="hero-check-circle"
+                    class={[
+                      "w-7 h-7",
+                      if(form[:status].value == :completed, do: "bg-green-600", else: "bg-gray-300")
+                    ]}
+                  />
+                </button>
+                <div class="flex-auto block text-sm leading-6 text-zinc-900">
+                  <input type="hidden" name={form[:list_id].name} value={form[:list_id].value} />
+                  <.input
+                    field={form[:name]}
+                    type="text"
+                    border={false}
+                    strike_through={form[:status].value == :completed}
+                    phx-target={@myself}
+                    phx-keydown={
+                      !form.data.id &&
+                        JS.push("discard", target: @myself, value: %{list_id: @list_id})
                     }
-                  >
-                    <.icon name="hero-x-mark" />
-                  </button>
+                    phx-key="escape"
+                    phx-blur={form.data.id && JS.dispatch("submit", to: "##{form.id}")}
+                  />
                 </div>
-              </.simple_form>
-            </div>
+                <button
+                  :if={form.data.id}
+                  type="button"
+                  class="w-10 -mt-1 flex-none"
+                  phx-click={
+                    JS.push("delete", target: @myself, value: %{id: form.data.id})
+                    |> hide("#list#{@list_id}-item#{form.data.id}")
+                  }
+                >
+                  <.icon name="hero-x-mark" />
+                </button>
+              </div>
+            </.simple_form>
           </div>
         </div>
         <.button phx-click={JS.push("new", target: @myself, value: %{list_id: @list_id})} class="mt-4">
@@ -169,6 +173,12 @@ defmodule ComponentsExamplesWeb.ListComponent do
     {:noreply, stream_delete(socket, :items, empty_item_form)}
   end
 
+  def handle_event("toggle_complete", %{"id" => id}, socket) do
+    item = SortableList.get_item!(id)
+    {:ok, item} = SortableList.toggle_complete(item)
+    {:noreply, stream_insert(socket, :items, build_item_form(item, %{}, :validate))}
+  end
+
   defp build_item_form(list_id) do
     %Item{list_id: list_id}
     |> SortableList.change_item(%{})
@@ -183,6 +193,6 @@ defmodule ComponentsExamplesWeb.ListComponent do
       # show errors or not
       |> Map.put(:action, action)
 
-    to_form(changeset, as: "item", id: "form-#{changeset.data.list_id}-#{changeset.data.id}")
+    to_form(changeset, id: "form-#{changeset.data.list_id}-#{changeset.data.id}")
   end
 end

@@ -229,6 +229,20 @@ defmodule ComponentsExamples.SortableList do
     Item.changeset(item, attrs)
   end
 
+  def toggle_complete(%Item{} = item) do
+    new_status =
+      case item.status do
+        :completed -> :started
+        :started -> :completed
+      end
+
+    query = from(i in Item, where: i.id == ^item.id)
+    {1, _} = Repo.update_all(query, set: [status: new_status])
+    item = %Item{item | status: new_status}
+
+    {:ok, item}
+  end
+
   defp multi_decrement_positions(
          %Ecto.Multi{} = multi,
          name,
