@@ -18,6 +18,7 @@ defmodule ComponentsExamplesWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :home
+    live "/shopping_list", ShoppingListLive
   end
 
   # Other scopes may use custom stacks.
