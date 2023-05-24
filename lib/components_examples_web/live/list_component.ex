@@ -108,8 +108,6 @@ defmodule ComponentsExamplesWeb.ListComponent do
         list_name: list.title,
         group: assigns.group
       )
-      # |> stream(:items, item_forms, reset: true)
-      # pa que es el reset true????
       |> stream(:items, item_forms)
 
     {:ok, socket}
@@ -120,7 +118,7 @@ defmodule ComponentsExamplesWeb.ListComponent do
   end
 
   def handle_event("new", %{"list_id" => list_id}, socket) do
-    {:noreply, stream_insert(socket, :items, build_item_form(list_id), at: -1)}
+    {:noreply, stream_insert(socket, :items, build_empty_form(list_id), at: -1)}
   end
 
   def handle_event("save", %{"id" => id, "item" => params}, socket) do
@@ -138,7 +136,7 @@ defmodule ComponentsExamplesWeb.ListComponent do
   def handle_event("save", %{"item" => item_params}, socket) do
     case SortableList.create_item(item_params) do
       {:ok, new_item} ->
-        empty_form = build_item_form(item_params["list_id"])
+        empty_form = build_empty_form(item_params["list_id"])
 
         {:noreply,
          socket
@@ -152,7 +150,6 @@ defmodule ComponentsExamplesWeb.ListComponent do
   end
 
   def handle_event("validate", %{"item" => item_params} = params, socket) do
-    # asegurarse de tener los datos en data
     item = %Item{id: params["id"] || nil, list_id: item_params["list_id"]}
     {:noreply, stream_insert(socket, :items, build_item_form(item, item_params, :validate))}
   end
@@ -164,12 +161,12 @@ defmodule ComponentsExamplesWeb.ListComponent do
   end
 
   def handle_event("reset", params, socket) do
-    empty_item_form = build_item_form(params["list_id"])
+    empty_item_form = build_empty_form(params["list_id"])
     {:noreply, stream(socket, :items, [empty_item_form], reset: true)}
   end
 
   def handle_event("discard", params, socket) do
-    empty_item_form = build_item_form(params["list_id"])
+    empty_item_form = build_empty_form(params["list_id"])
     {:noreply, stream_delete(socket, :items, empty_item_form)}
   end
 
@@ -179,11 +176,8 @@ defmodule ComponentsExamplesWeb.ListComponent do
     {:noreply, stream_insert(socket, :items, build_item_form(item, %{}, :validate))}
   end
 
-  defp build_item_form(list_id) do
-    %Item{list_id: list_id}
-    |> SortableList.change_item(%{})
-    # id consistente entre forms nuevos
-    |> to_form(id: "form-#{list_id}-")
+  defp build_empty_form(list_id) do
+    build_item_form(%Item{list_id: list_id}, %{})
   end
 
   defp build_item_form(item_or_changeset, params, action \\ nil) do
