@@ -174,10 +174,6 @@ defmodule ComponentsExamplesWeb.CoreComponents do
   attr :for, :any, required: true, doc: "the datastructure for the form"
   attr :as, :any, default: nil, doc: "the server side parameter to collect all input under"
 
-  attr :inputs_container_class, :string,
-    default: "mt-10 space-y-8 bg-white",
-    doc: "the customized classes for the inputs container"
-
   attr :rest, :global,
     include: ~w(autocomplete name rel action enctype method novalidate target),
     doc: "the arbitrary HTML attributes to apply to the form tag"
@@ -188,7 +184,7 @@ defmodule ComponentsExamplesWeb.CoreComponents do
   def simple_form(assigns) do
     ~H"""
     <.form :let={f} for={@for} as={@as} {@rest}>
-      <div class={@inputs_container_class}>
+      <div class="bg-white">
         <%= render_slot(@inner_block, f) %>
         <div :for={action <- @actions} class="mt-2 flex items-center justify-between gap-6">
           <%= render_slot(action, f) %>
@@ -244,6 +240,8 @@ defmodule ComponentsExamplesWeb.CoreComponents do
   attr :name, :any
   attr :label, :string, default: nil
   attr :value, :any
+  attr :border, :boolean, default: true
+  attr :strike_through, :boolean, default: false
 
   attr :type, :string,
     default: "text",
@@ -348,9 +346,11 @@ defmodule ComponentsExamplesWeb.CoreComponents do
         id={@id}
         value={Phoenix.HTML.Form.normalize_value(@type, @value)}
         class={[
-          "mt-2 block w-full rounded-lg text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6",
-          "phx-no-feedback:border-zinc-300 phx-no-feedback:focus:border-zinc-400",
-          "border-zinc-300 focus:border-zinc-400",
+          "block w-full rounded-lg text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6",
+          @border && "phx-no-feedback:border-zinc-300 phx-no-feedback:focus:border-zinc-400",
+          @border && "border-zinc-300 focus:border-zinc-400",
+          if(!@border, do: "border-0"),
+          if(@strike_through, do: "line-through"),
           @errors != [] && "border-rose-400 focus:border-rose-400"
         ]}
         {@rest}
