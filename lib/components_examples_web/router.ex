@@ -19,6 +19,10 @@ defmodule ComponentsExamplesWeb.Router do
 
     get "/", PageController, :home
     live "/shopping_list", ShoppingListLive
+    live "/library", LibraryLive, :book_list
+    live "/library/book/new", LibraryLive, :new_book
+    live "/library/book/:id/edit", LibraryLive, :edit_book
+    live "/library/author/new", LibraryLive, :new_author
   end
 
   # Other scopes may use custom stacks.
