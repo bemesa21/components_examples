@@ -18,10 +18,16 @@ defmodule ComponentsExamplesWeb.MulfiFormComponent do
         <h1 class="text-md font-semibold leading-8 text-zinc-800">
           Authors
         </h1>
-        <.inputs_for :let={b_author} field={@form[:book_authors]}>
-          <input type="hidden" name="book[authors_order][]" value={b_author.index} />
-          <.input type="select" field={b_author[:author_id]} placeholder="Author" options={@authors} />
-        </.inputs_for>
+
+        <div id="authors" phx-hook="SortableInputsFor" class="space-y-2">
+          <.inputs_for :let={b_author} field={@form[:book_authors]}>
+            <div class="flex space-x-2 drag-item">
+              <.icon name="hero-bars-3" class="w-6 h-6 relative top-2" data-handle />
+              <input type="hidden" name="book[authors_order][]" value={b_author.index} />
+              <.input type="select" field={b_author[:author_id]} placeholder="Author" options={@authors} />
+            </div>
+          </.inputs_for>
+        </div>
         <:actions>
           <.button phx-disable-with="Saving...">
             Save
