@@ -9,8 +9,8 @@ defmodule ComponentsExamples.Library.Book do
     field :publication_date, :utc_datetime
     field :title, :string
 
-    has_many :book_authors, AuthorBook
-
+    has_many :book_authors, AuthorBook, preload_order: [asc: :position]
+    has_many :authors, through: [:book_authors, :author]
     timestamps()
   end
 

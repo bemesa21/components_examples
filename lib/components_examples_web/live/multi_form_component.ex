@@ -24,7 +24,12 @@ defmodule ComponentsExamplesWeb.MulfiFormComponent do
             <div class="flex space-x-2 drag-item">
               <.icon name="hero-bars-3" class="w-6 h-6 relative top-2" data-handle />
               <input type="hidden" name="book[authors_order][]" value={b_author.index} />
-              <.input type="select" field={b_author[:author_id]} placeholder="Author" options={@authors} />
+              <.input
+                type="select"
+                field={b_author[:author_id]}
+                placeholder="Author"
+                options={@authors}
+              />
             </div>
           </.inputs_for>
         </div>
@@ -43,11 +48,12 @@ defmodule ComponentsExamplesWeb.MulfiFormComponent do
     """
   end
 
-  def update(%{book: book} = _assigns, socket) do
+  def update(%{book: book} = assigns, socket) do
     book_changeset = Library.change_book(book)
 
     socket =
       socket
+      |> assign(assigns)
       |> assign_form(book_changeset)
       |> assign_authors()
 
@@ -55,6 +61,36 @@ defmodule ComponentsExamplesWeb.MulfiFormComponent do
   end
 
   def handle_event("save", %{"book" => book_params} = _param, socket) do
+    save_book(socket, socket.assigns.action, book_params)
+  end
+
+  def handle_event("validate", %{"book" => book_params} = _params, socket) do
+    # use assigns book..
+    book_form =
+      %Book{}
+      |> Library.change_book(book_params)
+      |> Map.put(:action, :validate)
+      |> to_form()
+
+    {:noreply, assign(socket, :form, book_form)}
+  end
+
+  defp save_book(socket, :edit_book, book_params) do
+    case Library.update_book(socket.assigns.book, book_params) do
+      {:ok, _book} ->
+        {:noreply,
+         socket
+         |> push_patch(to: ~p"/library/")
+         |> put_flash(:info, "Book updated successfully")}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        changeset = Map.put(changeset, :action, :edit)
+
+        {:noreply, assign_form(socket, changeset)}
+    end
+  end
+
+  defp save_book(socket, :new_book, book_params) do
     case Library.create_book(book_params) do
       {:ok, _book} ->
         {:noreply,
@@ -67,17 +103,6 @@ defmodule ComponentsExamplesWeb.MulfiFormComponent do
 
         {:noreply, assign_form(socket, changeset)}
     end
-  end
-
-  def handle_event("validate", %{"book" => book_params} = _params, socket) do
-    # use assigns book..
-    book_form =
-      %Book{}
-      |> Library.change_book(book_params)
-      |> Map.put(:action, :validate)
-      |> to_form()
-
-    {:noreply, assign(socket, :form, book_form)}
   end
 
   defp assign_form(socket, %Ecto.Changeset{} = changeset) do

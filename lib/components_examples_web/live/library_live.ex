@@ -9,7 +9,7 @@ defmodule ComponentsExamplesWeb.LibraryLive do
   alias ComponentsExamples.Library.Book
 
   def mount(_params, _session, socket) do
-    {:ok, socket}
+    {:ok, stream(socket, :books, Library.list_books())}
   end
 
   def render(assigns) do
@@ -28,7 +28,7 @@ defmodule ComponentsExamplesWeb.LibraryLive do
       show
       on_cancel={JS.patch(~p"/library/")}
     >
-      <.live_component module={MulfiFormComponent} id="book_form" book={@book} />
+      <.live_component module={MulfiFormComponent} id="book_form" book={@book} action={@live_action} />
     </.modal>
 
     <.modal
@@ -37,13 +37,47 @@ defmodule ComponentsExamplesWeb.LibraryLive do
       show
       on_cancel={JS.patch(~p"/library/")}
     >
-      <.live_component module={AuthorFormComponent} id="author_form" author={@author} />
+      <.live_component
+        module={AuthorFormComponent}
+        id="author_form"
+        author={@author}
+        action={@live_action}
+      />
     </.modal>
+
+    <.table id="books" rows={@streams.books}>
+      <:col :let={{_id, book}} label="id"><%= book.id %></:col>
+      <:col :let={{_id, book}} label="title"><%= book.title %></:col>
+      <:col :let={{_id, book}} label="authors">
+        <div :for={author <- book.authors}>
+          <span><%= author.name %></span>
+        </div>
+      </:col>
+      <:col :let={{_id, book}}>
+        <.link patch={~p"/library/book/#{book.id}/edit"} alt="Edit Book">
+          <.icon name="hero-pencil-square" class="w-4 h-4 relative" />
+        </.link>
+
+        <.link
+          phx-click="delete-book"
+          phx-value-id={book.id}
+          alt="delete book"
+          data-confirm="Are you sure?"
+        >
+          <.icon name="hero-trash" class="w-4 h-4 relative" />
+        </.link>
+      </:col>
+    </.table>
     """
   end
 
   def handle_params(params, _uri, socket) do
     {:noreply, apply_action(socket, socket.assigns.live_action, params)}
+  end
+
+  def handle_event("delete-book", %{"id" => id}, socket) do
+    {:ok, book} = Library.delete_book(id)
+    {:noreply, stream_delete(socket, :books, book)}
   end
 
   defp apply_action(socket, :new_book, _params) do

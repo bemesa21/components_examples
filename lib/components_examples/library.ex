@@ -149,4 +149,56 @@ defmodule ComponentsExamples.Library do
 
   """
   def get_book!(id), do: Repo.get(Book, id) |> Repo.preload([:book_authors])
+
+  @doc """
+  Returns the list of books.
+
+  ## Examples
+
+      iex> list_books()
+      [%Author{}, ...]
+
+  """
+
+  def list_books do
+    Book
+    |> Repo.all()
+    |> Repo.preload(:authors)
+  end
+
+  @doc """
+  Deletes a book.
+
+  ## Examples
+
+      iex> delete_book(book_id)
+      {:ok, %Book{}}
+
+      iex> delete_book(book_id)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def delete_book(book_id) do
+    Book
+    |> Repo.get!(book_id)
+    |> Repo.delete()
+  end
+
+  @doc """
+  Updates a book.
+
+  ## Examples
+
+      iex> update_book(book, %{field: new_value})
+      {:ok, %Book{}}
+
+      iex> update_book(book, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def update_book(%Book{} = book, attrs) do
+    book
+    |> Book.changeset(attrs)
+    |> Repo.update()
+  end
 end
