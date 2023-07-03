@@ -13,14 +13,10 @@ defmodule ComponentsExamples.Library.AuthorBook do
   end
 
   @doc false
-  def changeset(author_book, %{"_persistent_id" => id} = attrs) do
+  def changeset(author_book, attrs, position) do
     author_book
     |> cast(attrs, [:author_id, :book_id])
-    |> change(position: String.to_integer(id))
-  end
-
-  def changeset(author_book, attrs) do
-    author_book
-    |> cast(attrs, [:author_id, :book_id])
+    |> change(position: position)
+    |> unique_constraint([:author, :book], name: "author_books_author_id_book_id_index")
   end
 end

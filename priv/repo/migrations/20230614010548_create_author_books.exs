@@ -3,8 +3,8 @@ defmodule ComponentsExamples.Repo.Migrations.CreateAuthorBooks do
 
   def change do
     create table(:author_books) do
-      add :author_id, references(:authors, on_delete: :delete_all)
-      add :book_id, references(:books, on_delete: :delete_all)
+      add :author_id, references(:authors, on_delete: :delete_all, on_replace: :delete)
+      add :book_id, references(:books, on_delete: :delete_all, on_replace: :delete)
       add :position, :integer, null: false
 
       timestamps()

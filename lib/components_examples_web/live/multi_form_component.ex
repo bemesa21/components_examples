@@ -2,7 +2,6 @@ defmodule ComponentsExamplesWeb.MulfiFormComponent do
   use ComponentsExamplesWeb, :live_component
 
   alias ComponentsExamples.Library.AuthorBook
-  alias ComponentsExamples.Library.Book
   alias ComponentsExamples.Library
 
   def render(assigns) do
@@ -65,9 +64,8 @@ defmodule ComponentsExamplesWeb.MulfiFormComponent do
   end
 
   def handle_event("validate", %{"book" => book_params} = _params, socket) do
-    # use assigns book..
     book_form =
-      %Book{}
+      socket.assigns.book
       |> Library.change_book(book_params)
       |> Map.put(:action, :validate)
       |> to_form()
