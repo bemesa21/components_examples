@@ -10,7 +10,7 @@ defmodule ComponentsExamples.Library.Book do
     field :title, :string
 
     has_many :book_authors, AuthorBook, preload_order: [asc: :position], on_replace: :delete
-    has_many :authors, through: [:book_authors, :author], on_replace: :delete
+    has_many :authors, through: [:book_authors, :author]
     timestamps()
   end
 
@@ -22,7 +22,7 @@ defmodule ComponentsExamples.Library.Book do
     |> cast_assoc(:book_authors,
       with: &AuthorBook.changeset/3,
       sort_param: :authors_order,
-      drop_param: :authors_drop
+      drop_param: :authors_delete
     )
   end
 end

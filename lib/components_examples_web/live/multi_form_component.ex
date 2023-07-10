@@ -7,7 +7,7 @@ defmodule ComponentsExamplesWeb.MulfiFormComponent do
   def render(assigns) do
     ~H"""
     <div>
-      <.simple_form for={@form} phx-change="validate" phx-submit="save" phx-target={@myself} class="">
+      <.simple_form for={@form} phx-change="validate" phx-submit="save" phx-target={@myself} class="" as="prieba">
         <h1 class="text-md font-semibold leading-8 text-zinc-800">
           New Book
         </h1>
@@ -29,6 +29,15 @@ defmodule ComponentsExamplesWeb.MulfiFormComponent do
                 placeholder="Author"
                 options={@authors}
               />
+              <label>
+                <input
+                  type="checkbox"
+                  name="book[authors_delete][]"
+                  value={b_author.index}
+                  class="hidden"
+                />
+                <.icon name="hero-x-mark" class="w-6 h-6 relative top-2" />
+              </label>
             </div>
           </.inputs_for>
         </div>
@@ -113,11 +122,11 @@ defmodule ComponentsExamplesWeb.MulfiFormComponent do
     end
   end
 
-  defp assign_authors(socket) do
-    authors =
-      Library.list_authors()
-      |> Enum.map(&{&1.name, &1.id})
+    defp assign_authors(socket) do
+      authors =
+        Library.list_authors()
+        |> Enum.map(&{&1.name, &1.id})
 
-    assign(socket, :authors, authors)
-  end
+      assign(socket, :authors, authors)
+    end
 end
