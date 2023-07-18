@@ -9,7 +9,7 @@ defmodule ComponentsExamplesWeb.LibraryLive do
   alias ComponentsExamples.Library.Book
 
   def mount(_params, _session, socket) do
-    {:ok, stream(socket, :books, Library.list_books())}
+    {:ok, stream(socket, :books, [])}
   end
 
   def render(assigns) do
@@ -96,6 +96,7 @@ defmodule ComponentsExamplesWeb.LibraryLive do
     socket
     |> assign(:page_title, "Books List")
     |> assign(:book, nil)
+    |> stream(:books, Library.list_books, reset: true)
   end
 
   defp apply_action(socket, :new_author, _params) do

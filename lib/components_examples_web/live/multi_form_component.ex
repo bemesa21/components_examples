@@ -7,7 +7,7 @@ defmodule ComponentsExamplesWeb.MulfiFormComponent do
   def render(assigns) do
     ~H"""
     <div>
-      <.simple_form for={@form} phx-change="validate" phx-submit="save" phx-target={@myself} class="" as="prieba">
+      <.simple_form for={@form} phx-change="validate" phx-submit="save" phx-target={@myself}>
         <h1 class="text-md font-semibold leading-8 text-zinc-800">
           New Book
         </h1>
