@@ -33,7 +33,7 @@ defmodule ComponentsExamples.MixProject do
   defp deps do
     [
       {:phoenix, "~> 1.7.2"},
-      {:phoenix_ecto, "~> 4.4"},
+      {:phoenix_ecto, "~> 4.4.2"},
       {:ecto_sql, "~> 3.6"},
       {:postgrex, ">= 0.0.0"},
       {:phoenix_html, "~> 3.3"},

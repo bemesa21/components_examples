@@ -338,7 +338,7 @@ defmodule ComponentsExamplesWeb.CoreComponents do
   # All other inputs text, datetime-local, url, password, etc. are handled here...
   def input(assigns) do
     ~H"""
-    <div phx-feedback-for={@name}>
+    <div phx-feedback-for={@name} class="mb-2">
       <.label for={@id}><%= @label %></.label>
       <input
         type={@type}
@@ -560,10 +560,11 @@ defmodule ComponentsExamplesWeb.CoreComponents do
   """
   attr :name, :string, required: true
   attr :class, :any, default: nil
+  attr :rest, :global
 
   def icon(%{name: "hero-" <> _} = assigns) do
     ~H"""
-    <span class={[@name, @class]} />
+    <span class={[@name, @class]} {@rest} />
     """
   end
 
