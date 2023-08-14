@@ -137,18 +137,16 @@ defmodule ComponentsExamples.Library do
   @doc """
   Gets a single book.
 
-  Raises `Ecto.NoResultsError` if the Book does not exist.
-
   ## Examples
 
-      iex> get_book!(123)
+      iex> get_book(123)
       %Book{}
 
       iex> get_book!(456)
-      ** (Ecto.NoResultsError)
+      nil
 
   """
-  def get_book!(id), do: Repo.get(Book, id) |> Repo.preload([:book_authors])
+  def get_book(id), do: Repo.get(Book, id) |> Repo.preload([:book_authors])
 
   @doc """
   Returns the list of books.
@@ -160,10 +158,35 @@ defmodule ComponentsExamples.Library do
 
   """
 
-  def list_books do
-    Book
-    |> Repo.all()
-    |> Repo.preload(:authors)
+  def list_books(opts) do
+    books =
+      Book
+      |> generate_query(opts)
+      |> preload(:authors)
+      |> Repo.all()
+
+    {books, encode(List.last(books).id)}
+  end
+
+  def list_books(cursor, opts) do
+    case decode(cursor) do
+      {:ok, book} ->
+        book =
+          book
+          |> get_book()
+          |> Map.from_struct()
+
+        books =
+          Book
+          |> generate_query(opts, book)
+          |> preload(:authors)
+          |> Repo.all()
+
+        {books, encode(List.last(books).id)}
+
+      {:error, _} ->
+        {[], nil}
+    end
   end
 
   @doc """
@@ -200,5 +223,83 @@ defmodule ComponentsExamples.Library do
     book
     |> Book.changeset(attrs)
     |> Repo.update()
+  end
+
+  def encode(term) do
+    salt =
+      Application.get_env(:components_examples, ComponentsExamplesWeb.Endpoint)[:live_view][
+        :signing_salt
+      ]
+
+    Phoenix.Token.encrypt(ComponentsExamplesWeb.Endpoint, salt, term)
+  end
+
+  def decode(cursor) do
+    salt =
+      Application.get_env(:components_examples, ComponentsExamplesWeb.Endpoint)[:live_view][
+        :signing_salt
+      ]
+
+    case Phoenix.Token.decrypt(ComponentsExamplesWeb.Endpoint, salt, cursor, max_age: :infinity) do
+      {:ok, data} ->
+        {:ok, data}
+
+      {:error, reason} ->
+        inspect("Invalid cursor: #{reason}")
+        {:error, nil}
+    end
+  end
+
+  defp generate_query(base_query, opts, cursor) do
+    limit = Map.get(opts, :limit, 10)
+
+    base_query
+    |> order_by(^filter_order_by(opts))
+    |> where(^filter_where(opts, cursor))
+    |> limit(^limit)
+  end
+
+  defp generate_query(base_query, opts) do
+    limit = Map.get(opts, :limit, 10)
+
+    base_query
+    |> order_by(^filter_order_by(opts))
+    |> limit(^limit)
+  end
+
+  # uuid
+  defp filter_where(opts, cursor) do
+    opts
+    |> Map.get(:order_by, id: :asc)
+    |> Enum.reduce({dynamic(true), nil}, fn
+      {key, :asc}, {dynamic, nil} ->
+        {dynamic([b], ^dynamic and field(b, ^key) > ^cursor[key]), key}
+
+      {key, :asc}, {dynamic, last_key} ->
+        {dynamic(
+           [b],
+           ^dynamic or
+             (field(b, ^last_key) == ^cursor[last_key] and field(b, ^key) > ^cursor[key])
+         ), key}
+
+      {key, :desc}, {dynamic, nil} ->
+        {dynamic([b], ^dynamic and field(b, ^key) < ^cursor[key]), key}
+
+      {key, :desc}, {dynamic, last_key} ->
+        {dynamic(
+           [b],
+           ^dynamic or
+             (field(b, ^last_key) == ^cursor[last_key] and field(b, ^key) < ^cursor[key])
+         ), key}
+    end)
+    |> then(fn {query, _} -> query end)
+  end
+
+  defp filter_order_by(opts) do
+    opts
+    |> Map.get(:order_by, id: :asc)
+    |> Enum.map(fn {key, dir} ->
+      {dir, key}
+    end)
   end
 end

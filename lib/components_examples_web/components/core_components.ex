@@ -568,6 +568,68 @@ defmodule ComponentsExamplesWeb.CoreComponents do
     """
   end
 
+  @doc """
+  Renders a paginator component
+  ## Examples
+
+      <.paginator pagination_details={@pagination} name="library_paginator" />
+  """
+  attr :name, :string, required: true
+  attr :class, :any, default: nil
+  attr :pagination_details, :map
+
+  def paginator(assigns) do
+    ~H"""
+    <div class="flex flex-col items-center">
+      <div class="inline-flex mt-2 xs:mt-0">
+        <!-- Buttons -->
+        <.link
+          patch={@pagination_details.next_page}
+          class="flex items-center justify-center px-4 h-10 text-base font-medium text-white bg-gray-800 rounded-l hover:bg-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
+        >
+          <svg
+            class="w-3.5 h-3.5 mr-2"
+            aria-hidden="true"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 14 10"
+          >
+            <path
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M13 5H1m0 0 4 4M1 5l4-4"
+            />
+          </svg>
+          Prev
+        </.link>
+        <.link
+          patch={@pagination_details.next_page}
+          class="flex items-center justify-center px-4 h-10 text-base font-medium text-white bg-gray-800 border-0 border-l border-gray-700 rounded-r hover:bg-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
+        >
+          Next
+          <svg
+            class="w-3.5 h-3.5 ml-2"
+            aria-hidden="true"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 14 10"
+          >
+            <path
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M1 5h12m0 0L9 1m4 4L9 9"
+            />
+          </svg>
+        </.link>
+      </div>
+    </div>
+    """
+  end
+
   ## JS Commands
 
   def show(js \\ %JS{}, selector) do

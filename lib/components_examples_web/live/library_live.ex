@@ -8,6 +8,12 @@ defmodule ComponentsExamplesWeb.LibraryLive do
   alias ComponentsExamples.Library.Author
   alias ComponentsExamples.Library.Book
 
+  @pagination %{
+    next_page: nil,
+    prev_page: nil,
+    order_by: [title: :asc, publication_date: :asc]
+  }
+
   def mount(_params, _session, socket) do
     {:ok, stream(socket, :books, [])}
   end
@@ -53,6 +59,7 @@ defmodule ComponentsExamplesWeb.LibraryLive do
           <span><%= author.name %></span>
         </div>
       </:col>
+      <:col :let={{_id, book}} label="publication_date"><%= book.publication_date %></:col>
       <:col :let={{_id, book}}>
         <.link patch={~p"/library/book/#{book.id}/edit"} alt="Edit Book">
           <.icon name="hero-pencil-square" class="w-4 h-4 relative" />
@@ -68,6 +75,8 @@ defmodule ComponentsExamplesWeb.LibraryLive do
         </.link>
       </:col>
     </.table>
+
+    <.paginator pagination_details={@pagination} name="library_paginator" />
     """
   end
 
@@ -89,19 +98,34 @@ defmodule ComponentsExamplesWeb.LibraryLive do
   defp apply_action(socket, :edit_book, %{"id" => id}) do
     socket
     |> assign(:page_title, "Edit Book")
-    |> assign(:book, Library.get_book!(id))
+    |> assign(:book, Library.get_book(id))
   end
 
-  defp apply_action(socket, :book_list, _params) do
+  defp apply_action(socket, :book_list, params) do
     socket
     |> assign(:page_title, "Books List")
     |> assign(:book, nil)
-    |> stream(:books, Library.list_books, reset: true)
+    |> list_books(params)
   end
 
   defp apply_action(socket, :new_author, _params) do
     socket
     |> assign(:page_title, "New author")
     |> assign(:author, %Author{})
+  end
+
+  defp list_books(socket, params) do
+    {books, cursor} =
+      case Map.get(params, "cursor") do
+        nil ->
+          Library.list_books(@pagination)
+
+        cursor ->
+          Library.list_books(cursor, @pagination)
+      end
+
+    socket
+    |> assign(:pagination, %{@pagination | next_page: ~p"/library/#{cursor}"})
+    |> stream(:books, books, reset: true)
   end
 end

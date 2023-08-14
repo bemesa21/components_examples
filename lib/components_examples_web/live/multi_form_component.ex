@@ -122,11 +122,11 @@ defmodule ComponentsExamplesWeb.MulfiFormComponent do
     end
   end
 
-    defp assign_authors(socket) do
-      authors =
-        Library.list_authors()
-        |> Enum.map(&{&1.name, &1.id})
+  defp assign_authors(socket) do
+    authors =
+      Library.list_authors()
+      |> Enum.map(&{&1.name, &1.id})
 
-      assign(socket, :authors, authors)
-    end
+    assign(socket, :authors, authors)
+  end
 end
