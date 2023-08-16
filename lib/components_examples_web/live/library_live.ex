@@ -11,7 +11,8 @@ defmodule ComponentsExamplesWeb.LibraryLive do
   @pagination %{
     next_page: nil,
     prev_page: nil,
-    order_by: [title: :asc, publication_date: :asc]
+    limit: 10,
+    order_by: [title: :asc, publication_date: :desc]
   }
 
   def mount(_params, _session, socket) do
@@ -114,18 +115,43 @@ defmodule ComponentsExamplesWeb.LibraryLive do
     |> assign(:author, %Author{})
   end
 
-  defp list_books(socket, params) do
-    {books, cursor} =
-      case Map.get(params, "cursor") do
-        nil ->
-          Library.list_books(@pagination)
+  defp list_books(socket, params) when params == %{} do
+    {books, cursor} = Library.list_books(@pagination)
 
-        cursor ->
-          Library.list_books(cursor, @pagination)
+    pagination = %{@pagination | next_page: ~p"/library?after=#{cursor}"}
+
+    socket
+    |> assign(:pagination, pagination)
+    |> stream(:books, books, reset: true)
+  end
+
+  defp list_books(socket, params) do
+    {books, cursors} = Library.list_books(params, @pagination)
+
+    pagination =
+      case cursors do
+        {nil, nil} ->
+          @pagination
+
+        {nil, next_cursor} ->
+          %{@pagination | next_page: ~p"/library?limit=#{@pagination.limit}&after=#{next_cursor}"}
+
+        {prev_cursor, nil} ->
+          %{
+            @pagination
+            | prev_page: ~p"/library?limit=#{@pagination.limit}&before=#{prev_cursor}"
+          }
+
+        {prev_cursor, next_cursor} ->
+          %{
+            @pagination
+            | prev_page: ~p"/library?limit=#{@pagination.limit}&before=#{prev_cursor}",
+              next_page: ~p"/library?limit=#{@pagination.limit}&after=#{next_cursor}"
+          }
       end
 
     socket
-    |> assign(:pagination, %{@pagination | next_page: ~p"/library/#{cursor}"})
+    |> assign(:pagination, pagination)
     |> stream(:books, books, reset: true)
   end
 end

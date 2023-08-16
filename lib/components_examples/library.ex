@@ -168,21 +168,61 @@ defmodule ComponentsExamples.Library do
     {books, encode(List.last(books).id)}
   end
 
-  def list_books(cursor, opts) do
+  def list_books(%{"after" => cursor}, opts) do
+    books = list_books(cursor, opts, :after)
+
+    case {length(books) > 0, has_next_page?(books, opts)} do
+      {true, true} ->
+        {_last, books} = List.pop_at(books, -1)
+        {books, {encode(hd(books).id), encode(List.last(books).id)}}
+
+      {true, false} ->
+        {books, {encode(hd(books).id), nil}}
+
+      {_, _} ->
+        {books, {nil, nil}}
+    end
+  end
+
+  def list_books(%{"before" => cursor}, opts) do
+    books = list_books(cursor, opts, :before)
+
+    case {length(books) > 0, has_prev_page?(books, opts)} do
+      {true, true} ->
+        {_last, books} = List.pop_at(books, -1)
+        books = Enum.reverse(books)
+        {books, {encode(hd(books).id), encode(List.last(books).id)}}
+
+      {true, false} ->
+        books = Enum.reverse(books)
+        {books, {nil, encode(List.last(books).id)}}
+
+      {_, _} ->
+        {books, {nil, nil}}
+    end
+  end
+
+  defp list_books(cursor, opts, direction) do
     case decode(cursor) do
       {:ok, book} ->
+        limit = Map.get(opts, :limit, 10)
+
         book =
           book
           |> get_book()
           |> Map.from_struct()
 
-        books =
-          Book
-          |> generate_query(opts, book)
-          |> preload(:authors)
-          |> Repo.all()
+        opts =
+          if direction == :after do
+            opts
+          else
+            invert_direction(opts)
+          end
 
-        {books, encode(List.last(books).id)}
+        Book
+        |> generate_query(opts, book)
+        |> preload(:authors)
+        |> Repo.all()
 
       {:error, _} ->
         {[], nil}
@@ -256,7 +296,7 @@ defmodule ComponentsExamples.Library do
     base_query
     |> order_by(^filter_order_by(opts))
     |> where(^filter_where(opts, cursor))
-    |> limit(^limit)
+    |> limit(^limit + 1)
   end
 
   defp generate_query(base_query, opts) do
@@ -301,5 +341,25 @@ defmodule ComponentsExamples.Library do
     |> Enum.map(fn {key, dir} ->
       {dir, key}
     end)
+  end
+
+  defp invert_direction(opts) do
+    new_opts =
+      opts
+      |> Map.get(:order_by, id: :asc)
+      |> Enum.map(fn
+        {key, :asc} -> {key, :desc}
+        {key, :desc} -> {key, :asc}
+      end)
+
+    %{opts | order_by: new_opts}
+  end
+
+  def has_next_page?(results, opts) do
+    length(results) > Map.get(opts, :limit, 10)
+  end
+
+  def has_prev_page?(results, opts) do
+    length(results) > Map.get(opts, :limit, 10)
   end
 end

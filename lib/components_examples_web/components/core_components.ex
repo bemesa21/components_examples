@@ -584,7 +584,7 @@ defmodule ComponentsExamplesWeb.CoreComponents do
       <div class="inline-flex mt-2 xs:mt-0">
         <!-- Buttons -->
         <.link
-          patch={@pagination_details.next_page}
+          patch={@pagination_details.prev_page}
           class="flex items-center justify-center px-4 h-10 text-base font-medium text-white bg-gray-800 rounded-l hover:bg-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
         >
           <svg
