@@ -189,12 +189,10 @@ defmodule ComponentsExamples.Library do
 
     case {length(books) > 0, has_prev_page?(books, opts)} do
       {true, true} ->
-        {_last, books} = List.pop_at(books, -1)
-        books = Enum.reverse(books)
+        {_last, books} = List.pop_at(books, 0)
         {books, {encode(hd(books).id), encode(List.last(books).id)}}
 
       {true, false} ->
-        books = Enum.reverse(books)
         {books, {nil, encode(List.last(books).id)}}
 
       {_, _} ->
@@ -202,7 +200,25 @@ defmodule ComponentsExamples.Library do
     end
   end
 
-  defp list_books(cursor, opts, direction) do
+  defp list_books(cursor, opts, :after) do
+    case decode(cursor) do
+      {:ok, book_id} ->
+        book =
+          book_id
+          |> get_book()
+          |> Map.from_struct()
+
+        Book
+        |> generate_query(opts, book)
+        |> preload(:authors)
+        |> Repo.all()
+
+      {:error, _} ->
+        []
+    end
+  end
+
+  defp list_books(cursor, opts, :before) do
     case decode(cursor) do
       {:ok, book} ->
         limit = Map.get(opts, :limit, 10)
@@ -212,20 +228,17 @@ defmodule ComponentsExamples.Library do
           |> get_book()
           |> Map.from_struct()
 
-        opts =
-          if direction == :after do
-            opts
-          else
-            invert_direction(opts)
-          end
+        inner_query = generate_query(Book, invert_direction(opts), book)
 
-        Book
-        |> generate_query(opts, book)
-        |> preload(:authors)
-        |> Repo.all()
+        query =
+          from(q in subquery(inner_query),
+            order_by: ^filter_order_by(opts)
+          )
+          |> preload(:authors)
+          |> Repo.all()
 
       {:error, _} ->
-        {[], nil}
+        []
     end
   end
 
