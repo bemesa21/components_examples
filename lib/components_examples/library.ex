@@ -149,12 +149,16 @@ defmodule ComponentsExamples.Library do
   def get_book(id), do: Repo.get(Book, id) |> Repo.preload([:book_authors])
 
   @doc """
-  Returns the list of books.
+  Returns a tuple with the list of books, and a tuple with the
+  previous and next cursors.
 
   ## Examples
 
-      iex> list_books()
-      [%Author{}, ...]
+      iex> list_books(%{"after" => "my laaarge cursor"}, %{limit: 10, order_by: [title: :asc, publication_date: :desc]})
+      {[%Book{}, ...], {"previous page cursor", "next page cursor"}}
+
+      iex> list_books(%{limit: 10, order_by: [title: :asc, publication_date: :desc]})
+      {[%Book{}, ...], {nil, "next page cursor"}}
 
   """
 
@@ -168,8 +172,47 @@ defmodule ComponentsExamples.Library do
     {books, encode(List.last(books).id)}
   end
 
+  # invalid params
+  def list_books(%{"before" => _, "after" => _}, _opts), do: {[], {nil, nil}}
+
+  def list_books(%{"before" => cursor}, opts) do
+    case decode(cursor) do
+      {:ok, book_id} ->
+        if book = get_book(book_id) do
+          book
+          |> Map.from_struct()
+          |> list_books(opts, :before)
+        else
+          {[], {nil, nil}}
+        end
+
+      {:error, _} ->
+        {[], {nil, nil}}
+    end
+  end
+
   def list_books(%{"after" => cursor}, opts) do
-    books = list_books(cursor, opts, :after)
+    case decode(cursor) do
+      {:ok, book_id} ->
+        if book = get_book(book_id) do
+          book
+          |> Map.from_struct()
+          |> list_books(opts, :after)
+        else
+          {[], {nil, nil}}
+        end
+
+      {:error, _} ->
+        {[], {nil, nil}}
+    end
+  end
+
+  def list_books(book, opts, :after) do
+    books =
+      Book
+      |> generate_query(opts, book)
+      |> preload(:authors)
+      |> Repo.all()
 
     case {length(books) > 0, has_next_page?(books, opts)} do
       {true, true} ->
@@ -184,8 +227,15 @@ defmodule ComponentsExamples.Library do
     end
   end
 
-  def list_books(%{"before" => cursor}, opts) do
-    books = list_books(cursor, opts, :before)
+  def list_books(book, opts, :before) do
+    inner_query = generate_query(Book, invert_direction(opts), book)
+
+    books =
+      from(q in subquery(inner_query),
+        order_by: ^filter_order_by(opts)
+      )
+      |> preload(:authors)
+      |> Repo.all()
 
     case {length(books) > 0, has_prev_page?(books, opts)} do
       {true, true} ->
@@ -197,48 +247,6 @@ defmodule ComponentsExamples.Library do
 
       {_, _} ->
         {books, {nil, nil}}
-    end
-  end
-
-  defp list_books(cursor, opts, :after) do
-    case decode(cursor) do
-      {:ok, book_id} ->
-        book =
-          book_id
-          |> get_book()
-          |> Map.from_struct()
-
-        Book
-        |> generate_query(opts, book)
-        |> preload(:authors)
-        |> Repo.all()
-
-      {:error, _} ->
-        []
-    end
-  end
-
-  defp list_books(cursor, opts, :before) do
-    case decode(cursor) do
-      {:ok, book} ->
-        limit = Map.get(opts, :limit, 10)
-
-        book =
-          book
-          |> get_book()
-          |> Map.from_struct()
-
-        inner_query = generate_query(Book, invert_direction(opts), book)
-
-        query =
-          from(q in subquery(inner_query),
-            order_by: ^filter_order_by(opts)
-          )
-          |> preload(:authors)
-          |> Repo.all()
-
-      {:error, _} ->
-        []
     end
   end
 
